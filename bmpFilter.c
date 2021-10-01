@@ -62,7 +62,9 @@ void getBmpFileAsBytes(unsigned char* ptr, unsigned fileSizeInBytes, FILE* strea
 
 unsigned char getAverageIntensity(unsigned char blue, unsigned char green, unsigned char red) {
   unsigned char averageIntensity;
+
   averageIntensity = (blue+green+red)/3;
+
   return averageIntensity;
 }
 
@@ -77,7 +79,16 @@ void applyGrayscaleToPixel(unsigned char* pixel) {
 
 void applyThresholdToPixel(unsigned char* pixel) {
   unsigned char averageIntensity;
+ 
   averageIntensity = getAverageIntensity(pixel[0], pixel[1], pixel[2]);
+
+#ifdef DEBUG
+  printf("blue intensity = %u\n", pixel[0]);
+  printf("green intensity = %u\n", pixel[1]);
+  printf("red intensity = %u\n", pixel[2]);
+  printf("average intensity = %u\n", averageIntensity);
+#endif
+
   if(averageIntensity >= 128){
 	pixel[0] = 255;
 	pixel[1] = 255;
@@ -95,27 +106,32 @@ void applyFilterToPixel(unsigned char* pixel, int isGrayscale) {
 	applyGrayscaleToPixel(pixel);
   }
   else{
+	#ifdef DEBUG
+  printf("blue intensity = %u\n", pixel[0]);
+  printf("green intensity = %u\n", pixel[1]);
+  printf("red intensity = %u\n", pixel[2]);
+#endif
+
 	applyThresholdToPixel(pixel);
   }
 }
 
 void applyFilterToRow(unsigned char* row, int width, int isGrayscale) {
-  for(unsigned int i = 0; i < width; i++){
+  for(unsigned int i = 0; i < width*3; i+=3){
   	applyFilterToPixel(row+i, isGrayscale);
   }
 }
 
 void applyFilterToPixelArray(unsigned char* pixelArray, int width, int height, int isGrayscale) {
   int padding = 0;
-  padding = width % 4;
+  padding = (4 - ((width*3) % 4)) % 4;
 
 #ifdef DEBUG
   printf("padding = %d\n", padding);
 #endif  
   
   for(unsigned int i = 0; i < height; i++){
-	  applyFilterToRow(pixelArray+(i*(width-padding)), width-padding, isGrayscale);
-
+     applyFilterToRow(pixelArray+i*(width*3+padding), width, isGrayscale);
   }
 }
 void parseHeaderAndApplyFilter(unsigned char* bmpFileAsBytes, int isGrayscale) {
@@ -133,7 +149,7 @@ void parseHeaderAndApplyFilter(unsigned char* bmpFileAsBytes, int isGrayscale) {
   printf("offsetFirstBytePixelArray = %u\n", offsetFirstBytePixelArray);
   printf("width = %u\n", width);
   printf("height = %u\n", height);
-  printf("FileAsBytes = %p/n", bmpFileAsBytes);
+  printf("FileAsBytes = %p\n", bmpFileAsBytes);
   printf("pixelArray = %p\n", pixelArray);
 #endif
 
